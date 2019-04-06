@@ -70,6 +70,92 @@ namespace IngameScript
             // 
             // The method itself is required, but the arguments above
             // can be removed if not needed.
+
+
+            // Define the variables        
+            var LCD = GetBlocksFromGroup("Oxygen LCD Panels"); // lcd group name: Oxygen LCD Panels
+            var airVents = SearchBlocksByName("Air Vent"); // Air vents name: Air Vent        
+            var timer = GridTerminalSystem.GetBlockWithName("Timer Block Oxygen") as IMyTimerBlock;//nameoftimerblock   
+            var alarm = GridTerminalSystem.GetBlockWithName("Oxygen Alarm") as IMyFunctionalBlock; //nameofsoundblock        
+            var pressureStatus = "Pressurized";
+            string LCDText = " Life Support System:\r\n\r\n";
+            var LCDColour = Color.White;
+
+            // Check the air vents        
+            for (int i = 0; i < airVents.Count; i++)
+            {
+                string pressureInfo = airVents[i].DetailedInfo;
+                if (pressureInfo.IndexOf("Not pressurized") != -1)
+                {
+                    if (pressureStatus == "Pressurized")
+                    {
+                        LCDText += "                ----------- ALERT ----------- \r\n\r\n";
+                    }
+                    LCDText += airVents[i].CustomName.Substring(8) + " depressurised \r\n";
+                    LCDColour = Color.Red;
+                    pressureStatus = "Depressurized";
+                }
+            }//plays sound on sound blocks named Oxygen Alarm             
+
+            if (pressureStatus == "Depressurized")
+            {
+                alarm.GetActionWithName("PlaySound").Apply(alarm);
+            }
+            else
+            {
+                LCDText += " All " + airVents.Count + " zones are currently pressurised";
+            }
+
+            SetText(LCD, LCDText, LCDColour);
+
+            // Restart the event handler        
+            timer.GetActionWithName("Start").Apply(timer);
+
+        }
+
+        // Method for finding blocks by names          
+        List<IMyTerminalBlock> SearchBlocksByName(string blockName)
+        {
+            var blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(blockName, blocks);
+            return blocks;
+        }
+
+        // Method for finding block groups           
+        List<IMyTerminalBlock> GetBlocksFromGroup(string group)
+        {
+            IMyBlockGroup taggedGroup = GridTerminalSystem.GetBlockGroupWithName(group);
+            List<IMyTerminalBlock> listGroup = new List<IMyTerminalBlock>();
+            List<IMyTerminalBlock> finallist = new List<IMyTerminalBlock>();
+            if (taggedGroup != null)
+            {
+                taggedGroup.GetBlocks(listGroup);
+            }
+
+            //check group tagged blocks are of right type 
+            for (int i = 0; i < listGroup.Count; i++)
+            {
+                if (listGroup[i] is IMyTextPanel)//Can be made generic
+                    finallist.Add(listGroup[i]);
+            }
+            if (finallist != null)
+            {
+                return finallist;
+            }
+            throw new Exception("GetBlocksFromGroup: Group \"" + group + "\" not found");
+        }
+
+        // Method for writting to LCD Panels
+        void SetText(List<IMyTerminalBlock> blocks, string LCDText, Color color)
+        {
+            for (int i = 0; i < blocks.Count; i++)
+            {
+                IMyTextPanel panel = blocks[i] as IMyTextPanel;
+                panel.WritePublicText(LCDText);
+                panel.SetValue("FontColor", color);
+                panel.ShowTextureOnScreen();
+                panel.ShowPublicTextOnScreen();
+            }
         }
     }
 }
