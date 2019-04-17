@@ -76,7 +76,8 @@ namespace IngameScript
             var LCD = GetBlocksFromGroup("Oxygen LCD Panels"); // lcd group name: Oxygen LCD Panels
             var airVents = SearchBlocksByName("Air Vent"); // Air vents name: Air Vent        
             var timer = GridTerminalSystem.GetBlockWithName("Timer Block Oxygen") as IMyTimerBlock;//nameoftimerblock   
-            var alarm = GridTerminalSystem.GetBlockWithName("Oxygen Alarm") as IMyFunctionalBlock; //nameofsoundblock        
+            var alarm = GridTerminalSystem.GetBlockWithName("Oxygen Alarm") as IMyFunctionalBlock; //nameofsoundblock
+            var alarma = GridTerminalSystem.GetBlockWithName("Emergency Lights") as IMyInteriorLight;//nameoflight
             var pressureStatus = "Pressurized";
             string LCDText = " Life Support System:\r\n\r\n";
             var LCDColour = Color.White;
@@ -100,10 +101,17 @@ namespace IngameScript
             if (pressureStatus == "Depressurized")
             {
                 alarm.GetActionWithName("PlaySound").Apply(alarm);
+                List<IMyTerminalBlock> allDoors = new List<IMyTerminalBlock>();
+                GridTerminalSystem.GetBlocksOfType<IMyDoor>(allDoors);
+                for (int i = 0; i < allDoors.Count; i++) {
+                    allDoors[i].GetActionWithName("Open_Off").Apply(allDoors[i]);
+                }
             }
             else
             {
                 LCDText += " All " + airVents.Count + " zones are currently pressurised";
+                //set lights to off
+                //alarma.GetActionWithName("OnOff_Off").Apply(alarma);
             }
 
             SetText(LCD, LCDText, LCDColour);
